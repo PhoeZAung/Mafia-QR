@@ -3,30 +3,24 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Mafia QR Role Dealer</title>
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Montserrat:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <title>Mafia QR Roles</title>
 
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
   <style>
     :root {
-      --bg: #020202;
-      --panel: rgba(18, 18, 18, 0.96);
-      --panel2: #111;
-      --line: #2b1111;
-      --text: #f1f1f1;
+      --bg: #050505;
+      --panel: #111;
+      --panel2: #181818;
+      --border: #333;
+      --text: #f2f2f2;
       --muted: #8b8b8b;
-      --red: #d10000;
-      --red2: #650000;
-      --green: #4cd964;
-      --gold: #ffd6a5;
+      --red: #d31313;
+      --green: #42d46b;
+      --gold: #f1c27d;
       --purple: #9b59b6;
-      --shadow: 0 0 24px rgba(209, 0, 0, 0.25);
     }
 
     * { box-sizing: border-box; }
@@ -34,9 +28,9 @@
     body {
       margin: 0;
       min-height: 100vh;
-      background: radial-gradient(circle at top, #1d0505 0, #020202 50%, #000 100%);
+      background: radial-gradient(circle at top, #2a0707 0%, #050505 45%, #000 100%);
       color: var(--text);
-      font-family: 'Montserrat', sans-serif;
+      font-family: Arial, Helvetica, sans-serif;
       display: flex;
       justify-content: center;
     }
@@ -48,779 +42,697 @@
       padding: 18px;
     }
 
-    .screen { display: none; min-height: calc(100vh - 36px); flex-direction: column; gap: 12px; }
-    .screen.active { display: flex; }
+    h1, h2, h3, p { margin-top: 0; }
 
-    h1, h2, h3 { font-family: 'Cinzel', serif; text-transform: uppercase; margin: 0; }
-    h1 { color: var(--red); text-align: center; font-size: 38px; letter-spacing: 6px; text-shadow: var(--shadow); margin-top: 18px; }
-    h2 { color: #fff; font-size: 24px; letter-spacing: 2px; }
-    h3 { color: #bbb; font-size: 14px; letter-spacing: 1px; }
-    p { color: var(--muted); line-height: 1.45; }
+    h1 {
+      text-align: center;
+      letter-spacing: 5px;
+      color: var(--red);
+      margin: 20px 0 6px;
+      font-size: 36px;
+      text-shadow: 0 0 20px rgba(211, 19, 19, .45);
+    }
 
-    .subtitle { text-align: center; margin-top: -8px; letter-spacing: 3px; font-size: 12px; color: #777; }
-    .spacer { flex: 1; }
+    .subtitle {
+      text-align: center;
+      color: var(--muted);
+      letter-spacing: 2px;
+      font-size: 12px;
+      margin-bottom: 24px;
+      text-transform: uppercase;
+    }
+
+    .screen { display: none; }
+    .screen.active { display: block; }
 
     .card {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 14px;
-      box-shadow: 0 10px 28px rgba(0,0,0,0.45);
+      background: rgba(17, 17, 17, .96);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 14px 40px rgba(0,0,0,.35);
+      margin-bottom: 14px;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
     }
 
     input {
       width: 100%;
-      background: #090909;
-      border: 1px solid #333;
-      border-radius: 9px;
+      background: #050505;
+      color: white;
+      border: 1px solid var(--border);
+      border-radius: 10px;
       padding: 14px;
-      color: #fff;
-      font: inherit;
+      font-size: 16px;
+      margin-bottom: 12px;
       outline: none;
     }
+
     input:focus { border-color: var(--red); }
 
     button {
       width: 100%;
       border: 0;
-      border-radius: 9px;
-      padding: 14px;
-      color: #fff;
-      background: linear-gradient(180deg, var(--red), var(--red2));
-      font-family: 'Cinzel', serif;
+      border-radius: 10px;
+      padding: 14px 12px;
+      background: linear-gradient(180deg, var(--red), #700000);
+      color: white;
       font-weight: 800;
       letter-spacing: 1px;
       text-transform: uppercase;
       cursor: pointer;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+      margin: 6px 0;
     }
-    button:active { transform: scale(0.985); }
-    button.secondary { background: transparent; border: 1px solid #444; color: #aaa; box-shadow: none; }
-    button.outline { background: transparent; border: 1px solid var(--red); color: var(--red); box-shadow: none; }
-    button.small { width: auto; padding: 8px 10px; font-size: 12px; margin: 0; }
-    button.danger { background: #1a0505; border: 1px solid #722; color: #ff7777; box-shadow: none; }
-    button:disabled { opacity: .45; cursor: not-allowed; }
 
-    .row { display: flex; gap: 10px; align-items: center; }
+    button:active { transform: scale(.985); }
+
+    button.secondary {
+      background: #191919;
+      border: 1px solid var(--border);
+      color: #ddd;
+    }
+
+    button.ghost {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
     .row > * { flex: 1; }
-    .topbar { display:flex; align-items:center; gap:10px; margin-bottom: 4px; }
-    .back { width: 44px; height: 44px; padding: 0; flex: 0 0 auto; font-size: 22px; background: transparent; border: 1px solid #333; color: #aaa; box-shadow: none; }
 
-    .pill { display:inline-flex; align-items:center; justify-content:center; gap:6px; border:1px solid #333; border-radius:999px; padding:6px 10px; color:#aaa; background:#0b0b0b; font-size:12px; }
-    .statusline { display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:12px; color:#aaa; }
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
 
-    .role-list { max-height: 44vh; overflow: auto; border:1px solid #242424; border-radius: 10px; }
-    .role-header { padding: 8px 10px; background: #1a1a1a; font-weight: 800; font-size: 12px; letter-spacing: 1px; position: sticky; top: 0; z-index: 1; }
-    .role-row { display:flex; align-items:center; gap:8px; padding:10px; border-top:1px solid #232323; background:#0e0e0e; }
-    .role-main { flex:1; min-width:0; }
-    .role-name { font-weight:800; font-size:14px; }
-    .role-desc-mini { color:#777; font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px; }
-    .counter { display:flex; align-items:center; gap:8px; flex:0 0 auto; }
-    .count-btn { width:32px; height:32px; padding:0; margin:0; background:#202020; box-shadow:none; font-family:Arial, sans-serif; font-size:20px; }
-    .count-num { min-width:24px; text-align:center; font-weight:800; }
+    .tab {
+      background: #111;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 11px 6px;
+      font-size: 12px;
+      margin: 0;
+    }
 
-    .qr-wrap { display:flex; justify-content:center; padding: 10px; background:#fff; border-radius: 12px; width: fit-content; margin: 0 auto; }
-    #qrCanvas { width: 220px !important; height: 220px !important; }
-    .code-big { font-family:'Cinzel', serif; color:#fff; font-size:32px; letter-spacing:4px; text-align:center; }
-    .invite-link { word-break: break-all; color:#aaa; font-size:12px; text-align:center; }
+    .tab.active.mafia { border-color: var(--red); color: var(--red); }
+    .tab.active.town { border-color: var(--green); color: var(--green); }
+    .tab.active.neutral { border-color: var(--gold); color: var(--gold); }
 
-    .player-item { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:11px 0; border-bottom:1px solid #242424; }
-    .player-item:last-child { border-bottom:0; }
-    .player-name { font-weight:800; color:#fff; }
-    .player-meta { color:#777; font-size:11px; margin-top:2px; }
+    .role-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      padding: 12px 0;
+      border-bottom: 1px solid #242424;
+    }
 
-    .hidden-card {
-      min-height: 330px;
-      display:flex;
-      flex-direction:column;
-      justify-content:center;
-      align-items:center;
-      text-align:center;
+    .role-row:last-child { border-bottom: 0; }
+
+    .role-name {
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .role-desc {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .role-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .mini-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      padding: 0;
+      margin: 0;
+      font-size: 20px;
+      background: #202020;
+      border: 1px solid #3a3a3a;
+    }
+
+    .count-pill {
+      min-width: 26px;
+      text-align: center;
+      font-weight: 800;
+    }
+
+    .stat-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 10px;
+    }
+
+    .warn { color: #ffb84d; }
+    .good { color: var(--green); }
+    .bad { color: #ff6060; }
+
+    #qrBox {
+      background: #fff;
+      padding: 16px;
+      border-radius: 14px;
+      width: fit-content;
+      margin: 12px auto;
+    }
+
+    .player-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .player-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #0c0c0c;
+      border: 1px solid #222;
+      border-radius: 10px;
+      padding: 11px;
+      color: #ddd;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      background: var(--green);
+      border-radius: 50%;
+      box-shadow: 0 0 10px rgba(66, 212, 107, .7);
+      display: inline-block;
+      margin-right: 7px;
+    }
+
+    .role-card {
+      min-height: 380px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      border: 1px solid #3a3a3a;
+      border-radius: 20px;
+      padding: 26px 18px;
+      background: radial-gradient(circle at center, #1c1c1c 0%, #080808 70%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .big-icon {
+      font-size: 90px;
+      margin-bottom: 12px;
+      filter: drop-shadow(0 0 20px rgba(255,255,255,.08));
+    }
+
+    .card-back {
+      font-size: 72px;
+      color: var(--red);
+      text-shadow: 0 0 20px rgba(211,19,19,.5);
+    }
+
+    .role-title {
+      font-size: 30px;
+      font-weight: 900;
+      margin-bottom: 8px;
+    }
+
+    .role-type {
+      display: inline-block;
       border: 1px solid #333;
-      border-radius: 16px;
-      background: radial-gradient(circle, #1b0505, #080808 60%, #030303);
-      overflow:hidden;
-      position:relative;
+      background: #111;
+      border-radius: 999px;
+      padding: 5px 10px;
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 16px;
     }
-    .hidden-card::before {
-      content: '?';
-      position:absolute;
-      font-family:'Cinzel', serif;
-      font-size:220px;
-      color: rgba(255,255,255,.035);
-      line-height:1;
+
+    .center-note {
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.45;
     }
-    .card-front { position:relative; z-index:1; padding: 18px; }
-    .role-icon { font-size:72px; margin-bottom: 10px; }
-    .role-title { font-family:'Cinzel', serif; font-size:30px; font-weight:900; line-height:1.05; margin: 10px 0; }
-    .role-type { display:inline-block; font-size:11px; letter-spacing:2px; text-transform:uppercase; border:1px solid #333; background:#151515; border-radius:999px; padding:5px 10px; color:#bbb; }
-    .role-desc { color:#bbb; margin: 16px 0 0; font-size:14px; }
-    .ammo { margin-top: 14px; color:#777; font-size:12px; letter-spacing:1px; }
 
-    .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.9); z-index:9; padding:20px; align-items:center; justify-content:center; }
-    .modal.active { display:flex; }
-    .modal-box { max-width:420px; width:100%; max-height:80vh; overflow:auto; background:#0c0c0c; border:1px solid var(--red); border-radius:14px; padding:16px; }
-    .wiki-row { padding:10px; border:1px solid #282828; border-radius:10px; margin-bottom:8px; background:#111; }
+    .small {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
 
-    .toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); background:#111; border:1px solid #444; color:#fff; padding:10px 14px; border-radius:999px; display:none; z-index:20; max-width:92vw; text-align:center; }
-    .toast.show { display:block; }
+    .hidden { display: none !important; }
 
-    .mafia { color: var(--red); }
-    .villager { color: var(--green); }
-    .neutral { color: var(--gold); }
-
-    @media (max-height: 700px) {
-      h1 { font-size: 30px; margin-top: 4px; }
-      .role-list { max-height: 36vh; }
-      .hidden-card { min-height: 260px; }
-      .role-icon { font-size: 52px; }
-      .role-title { font-size: 24px; }
-      #qrCanvas { width: 180px !important; height: 180px !important; }
+    @media (max-width: 420px) {
+      #app { padding: 14px; }
+      h1 { font-size: 31px; }
+      .role-card { min-height: 340px; }
     }
   </style>
 </head>
 <body>
-  <div id="app">
-    <section id="home" class="screen active">
-      <h1>MAFIA</h1>
-      <div class="subtitle">QR ROLE DEALER</div>
-      <div class="spacer"></div>
+  <main id="app">
+    <h1>MAFIA</h1>
+    <p class="subtitle">QR Role Dealer</p>
+
+    <section id="screen-host-setup" class="screen active">
       <div class="card">
-        <button onclick="goCreate()">Create QR Game</button>
-        <button class="secondary" onclick="goJoin()">Join With Code</button>
-        <p style="text-align:center; font-size:12px; margin-bottom:0;">Players scan one QR, join the room, then the host assigns roles.</p>
-      </div>
-      <div class="spacer"></div>
-    </section>
+        <label for="playerCount">Amount of players</label>
+        <input id="playerCount" type="number" min="3" value="8" />
 
-    <section id="create" class="screen">
-      <div class="topbar"><button class="back" onclick="go('home')">←</button><h2>Create Game</h2></div>
-      <div class="card">
-        <div class="row">
-          <input id="playerCount" type="number" min="3" max="40" value="8" placeholder="# Players">
-          <button class="outline" onclick="randomizeRoles()">Quick Roles</button>
+        <div class="tabs">
+          <button class="tab mafia active" id="tab-mafia" onclick="setTab('mafia')">Mafia</button>
+          <button class="tab town" id="tab-town" onclick="setTab('town')">Town</button>
+          <button class="tab neutral" id="tab-neutral" onclick="setTab('neutral')">Neutral</button>
         </div>
-        <div class="statusline">
-          <span id="selectedCount">0 roles selected</span>
-          <span id="matchStatus">Needs 8</span>
+
+        <div id="roleList"></div>
+
+        <div class="stat-line">
+          <span>Players needed</span>
+          <strong id="neededCount">8</strong>
         </div>
-      </div>
+        <div class="stat-line">
+          <span>Roles selected</span>
+          <strong id="selectedCount">0</strong>
+        </div>
+        <p id="balanceMessage" class="small warn">Select the same number of roles as players.</p>
 
-      <div class="card" style="padding:0; overflow:hidden;">
-        <div id="roleList" class="role-list"></div>
-      </div>
-
-      <div class="row">
-        <button class="secondary" onclick="resetRoles()">Reset</button>
-        <button onclick="createRoom()">Create QR</button>
+        <button onclick="createGame()">Create Game QR</button>
       </div>
     </section>
 
-    <section id="host" class="screen">
-      <div class="topbar"><button class="back" onclick="go('home')">←</button><h2>Host Room</h2></div>
+    <section id="screen-host-room" class="screen">
       <div class="card">
-        <div class="code-big" id="hostCode">----</div>
-        <div class="qr-wrap"><canvas id="qrCanvas"></canvas></div>
-        <p class="invite-link" id="inviteLink"></p>
-        <button class="secondary" onclick="copyInvite()">Copy Join Link</button>
+        <h2 style="text-align:center; margin-bottom: 8px;">Scan to Join</h2>
+        <p class="center-note">Show this QR to everyone. There is no join-code screen.</p>
+        <div id="qrBox"></div>
+        <p id="joinUrlText" class="small" style="word-break:break-all; text-align:center;"></p>
       </div>
 
       <div class="card">
-        <div class="statusline">
-          <span id="hostStatus">Waiting for players...</span>
-          <span id="hostCount">0 / 0</span>
+        <h3>Joined Players</h3>
+        <div class="stat-line">
+          <span>Claimed roles</span>
+          <strong id="claimedCount">0 / 0</strong>
         </div>
-        <div id="hostPlayers"></div>
+        <div id="hostPlayerList" class="player-list"></div>
       </div>
 
-      <button id="assignBtn" onclick="assignRoles()">Assign Roles</button>
-      <button class="secondary" onclick="resetAssignments()">Reset Assigned Roles</button>
-      <button class="danger" onclick="closeRoom()">Close Room</button>
+      <button class="secondary" onclick="newGame()">Create Another Game</button>
     </section>
 
-    <section id="join" class="screen">
-      <div class="topbar"><button class="back" onclick="go('home')">←</button><h2>Join Game</h2></div>
-      <div class="spacer"></div>
+    <section id="screen-player-join" class="screen">
       <div class="card">
-        <input id="joinCode" placeholder="ROOM CODE" autocomplete="off" autocapitalize="characters">
-        <input id="joinName" placeholder="YOUR NAME" autocomplete="off">
-        <button onclick="joinRoom()">Join</button>
-        <p id="joinHelp" style="font-size:12px; text-align:center; margin-bottom:0;">Scan the QR or type the room code.</p>
+        <h2>Join Game</h2>
+        <p class="center-note">Enter your name, then claim one hidden role.</p>
+        <label for="playerName">Your name</label>
+        <input id="playerName" type="text" autocomplete="off" placeholder="Example: Alex" />
+        <button onclick="claimRole()">Join and Claim Role</button>
+        <p id="joinMessage" class="small"></p>
       </div>
-      <div class="spacer"></div>
     </section>
 
-    <section id="player" class="screen">
-      <div class="topbar"><button class="back" onclick="leavePlayerView()">←</button><h2>Your Role</h2></div>
-      <div class="card">
-        <div class="statusline">
-          <span id="playerRoomLabel">Room ----</span>
-          <span id="playerStatus">Waiting</span>
+    <section id="screen-player-card" class="screen">
+      <div class="role-card" id="roleCard">
+        <div id="cardBack">
+          <div class="card-back">?</div>
+          <h2>Role Hidden</h2>
+          <p class="center-note">Tap reveal only when nobody else can see your screen.</p>
         </div>
-      </div>
 
-      <div id="playerCard" class="hidden-card">
-        <div class="card-front" id="cardFront">
-          <div class="role-icon">🂠</div>
-          <div class="role-title">CARD HIDDEN</div>
-          <span class="role-type">Default</span>
-          <p class="role-desc">Tap reveal only when nobody else can see your screen.</p>
+        <div id="cardFront" class="hidden">
+          <div id="roleIcon" class="big-icon">?</div>
+          <div id="roleName" class="role-title">Role</div>
+          <div id="roleFaction" class="role-type">Faction</div>
+          <p id="roleDesc" class="center-note"></p>
         </div>
       </div>
 
-      <button id="revealBtn" onclick="toggleCard()" disabled>Reveal Card</button>
-      <button class="secondary" onclick="showWiki()">Role Wiki</button>
+      <button id="revealBtn" onclick="toggleCard()">Reveal Card</button>
     </section>
-  </div>
-
-  <div id="modal" class="modal" onclick="closeModal(event)">
-    <div class="modal-box" onclick="event.stopPropagation()">
-      <h2 id="modalTitle" style="color:var(--red); font-size:20px;">Info</h2>
-      <div id="modalBody"></div>
-      <button class="secondary" onclick="hideModal()">Close</button>
-    </div>
-  </div>
-
-  <div id="toast" class="toast"></div>
+  </main>
 
   <script>
+    // Firebase config reused from your original Mafia file. Replace this if you make a new Firebase project.
     const firebaseConfig = {
-        apiKey: "AIzaSyCvkcvKAj63Yaz0ZRJrskCsMsr5uoi2d4s",
-        authDomain: "mafia-61472.firebaseapp.com",
-        databaseURL: "https://mafia-61472-default-rtdb.firebaseio.com",
-        projectId: "mafia-61472",
-        storageBucket: "mafia-61472.firebasestorage.app",
-        messagingSenderId: "122685510130",
-        appId: "1:122685510130:web:7637cda263d333f478db6b",
-        measurementId: "G-W1FZWMDX8Z"
+      apiKey: "AIzaSyCvkcvKAj63Yaz0ZRJrskCsMsr5uoi2d4s",
+      authDomain: "mafia-61472.firebaseapp.com",
+      databaseURL: "https://mafia-61472-default-rtdb.firebaseio.com",
+      projectId: "mafia-61472",
+      storageBucket: "mafia-61472.firebasestorage.app",
+      messagingSenderId: "122685510130",
+      appId: "1:122685510130:web:7637cda263d333f478db6b",
+      measurementId: "G-W1FZWMDX8Z"
     };
+
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    const DB_ROOT = "mafiaQrRooms";
+
+    // Only roles + descriptions/icons/types/factions. No old lobby, password, timer, death, or host-game features.
     const ROLES_DEF = [
-        { id: 'mafia_all', name: 'MAFIA TEAM', cat: 'mafia', faction: 'mafia', icon: '🔫', type: 'Nightly', priority: 1, desc: 'All Mafia wake up. Identify your team.', isMeta: true }, 
-        { id: 'roleblocker', name: 'Mafia Roleblocker', cat: 'mafia', faction: 'mafia', icon: '🚫', type: 'Limited', priority: 2, desc: 'Block a player\'s ability tonight.', ammo: 1 },
-        { id: 'silencer', name: 'Mafia Silencer', cat: 'mafia', faction: 'mafia', icon: '🤐', type: 'Limited', priority: 3, desc: 'Select a target. They cannot speak tomorrow.', ammo: 2 },
-        { id: 'framer', name: 'Mafia Framer', cat: 'mafia', faction: 'mafia', icon: '🖼️', type: 'Nightly', priority: 4, desc: 'Select a target. They will appear GUILTY to investigations.' },
-        { id: 'godfather', name: 'Godfather', cat: 'mafia', faction: 'mafia', icon: '🕴️', type: 'Nightly', priority: 10, desc: 'Direct the kill. You appear innocent to detectives.' },
-        { id: 'mafia', name: 'Mafia Member', cat: 'mafia', faction: 'mafia', icon: '🔫', type: 'Nightly', priority: 10, desc: 'Wake up with Mafia. Execute the kill.' },
-        { id: 'bomb', name: 'Mafia Bomb', cat: 'mafia', faction: 'mafia', icon: '💣', type: 'Limited', priority: 99, desc: 'If you die, you can take someone with you.', ammo: 1 },
+      { id: 'roleblocker', name: 'Mafia Roleblocker', cat: 'mafia', faction: 'mafia', icon: '🚫', type: 'Limited', desc: 'Block a player\'s ability tonight.' },
+      { id: 'silencer', name: 'Mafia Silencer', cat: 'mafia', faction: 'mafia', icon: '🤐', type: 'Limited', desc: 'Select a target. They cannot speak tomorrow.' },
+      { id: 'framer', name: 'Mafia Framer', cat: 'mafia', faction: 'mafia', icon: '🖼️', type: 'Nightly', desc: 'Select a target. They will appear GUILTY to investigations.' },
+      { id: 'godfather', name: 'Godfather', cat: 'mafia', faction: 'mafia', icon: '🕴️', type: 'Nightly', desc: 'Direct the kill. You appear innocent to detectives.' },
+      { id: 'mafia', name: 'Mafia Member', cat: 'mafia', faction: 'mafia', icon: '🔫', type: 'Nightly', desc: 'Wake up with Mafia. Execute the kill.' },
+      { id: 'bomb', name: 'Mafia Bomb', cat: 'mafia', faction: 'mafia', icon: '💣', type: 'Limited', desc: 'If you die, you can take someone with you.' },
 
-        { id: 'guardian', name: 'Guardian Angel', cat: 'town', faction: 'villager', icon: '👼', type: 'Limited', priority: 30, desc: 'Revive a player who died last night.', ammo: 1 },
-        { id: 'surgeon', name: 'Surgeon', cat: 'town', faction: 'villager', icon: '💉', type: 'Limited', priority: 31, desc: 'You have Heal (Green) and Poison (Purple).', ammo: 1, ammo2: 1 }, 
-        { id: 'doctor', name: 'Doctor', cat: 'town', faction: 'villager', icon: '⚕️', type: 'Nightly', priority: 32, desc: 'Choose a player to heal. They cannot be killed tonight.' },
-        { id: 'bodyguard', name: 'Bodyguard', cat: 'town', faction: 'villager', icon: '🛡️', type: 'Nightly', priority: 33, desc: 'Protect a player. If attacked, you die instead of them.' },
-        { id: 'detective', name: 'Detective', cat: 'town', faction: 'villager', icon: '🔎', type: 'Nightly', priority: 34, desc: 'Investigate a player to see if they are suspicious.' },
-        { id: 'stalker', name: 'Stalker', cat: 'town', faction: 'villager', icon: '👁️', type: 'Nightly', priority: 35, desc: 'Watch a player to see who visits them.' },
-        { id: 'sheriff', name: 'Sheriff', cat: 'town', faction: 'villager', icon: '⭐', type: 'Limited', priority: 99, desc: 'Day Ability: Kill a suspect. If innocent, you die.', ammo: 1 },
-        { id: 'mayor', name: 'Mayor', cat: 'town', faction: 'villager', icon: '🎩', type: 'Limited', priority: 99, desc: 'Reveal yourself to make your vote count as 2.', ammo: 1 },
-        { id: 'toughguy', name: 'Tough Guy', cat: 'town', faction: 'villager', icon: '💪', type: 'Passive', priority: 99, desc: 'You survive the first attempt on your life.' },
-        { id: 'villager', name: 'Civilian', cat: 'town', faction: 'villager', icon: '👤', type: 'Passive', priority: 99, desc: 'No abilities. Vote to eliminate the Mafia.' },
-        
-        { id: 'serialkiller', name: 'Serial Killer', cat: 'neutral', faction: 'neutral', icon: '🔪', type: 'Nightly', priority: 20, desc: 'Kill one player each night. Win if last standing.' },
-        { id: 'jester', name: 'Jester', cat: 'neutral', faction: 'neutral', icon: '🤡', type: 'Passive', priority: 99, desc: 'Trick the town into voting you out to win.' },
-        { id: 'executioner', name: 'Executioner', cat: 'neutral', faction: 'neutral', icon: '🪓', type: 'Nightly', priority: 0.1, desc: '(Night 1) Choose target. Win if they get voted out.' },
-        { id: 'lover', name: 'Lover', cat: 'neutral', faction: 'neutral', icon: '❤️', type: 'Nightly', priority: 0, desc: '(Night 1 Only) Wake up and identify your partner.' },
+      { id: 'guardian', name: 'Guardian Angel', cat: 'town', faction: 'villager', icon: '👼', type: 'Limited', desc: 'Revive a player who died last night.' },
+      { id: 'surgeon', name: 'Surgeon', cat: 'town', faction: 'villager', icon: '💉', type: 'Limited', desc: 'You have Heal and Poison.' },
+      { id: 'doctor', name: 'Doctor', cat: 'town', faction: 'villager', icon: '⚕️', type: 'Nightly', desc: 'Choose a player to heal. They cannot be killed tonight.' },
+      { id: 'bodyguard', name: 'Bodyguard', cat: 'town', faction: 'villager', icon: '🛡️', type: 'Nightly', desc: 'Protect a player. If attacked, you die instead of them.' },
+      { id: 'detective', name: 'Detective', cat: 'town', faction: 'villager', icon: '🔎', type: 'Nightly', desc: 'Investigate a player to see if they are suspicious.' },
+      { id: 'stalker', name: 'Stalker', cat: 'town', faction: 'villager', icon: '👁️', type: 'Nightly', desc: 'Watch a player to see who visits them.' },
+      { id: 'sheriff', name: 'Sheriff', cat: 'town', faction: 'villager', icon: '⭐', type: 'Limited', desc: 'Day Ability: Kill a suspect. If innocent, you die.' },
+      { id: 'mayor', name: 'Mayor', cat: 'town', faction: 'villager', icon: '🎩', type: 'Limited', desc: 'Reveal yourself to make your vote count as 2.' },
+      { id: 'toughguy', name: 'Tough Guy', cat: 'town', faction: 'villager', icon: '💪', type: 'Passive', desc: 'You survive the first attempt on your life.' },
+      { id: 'villager', name: 'Civilian', cat: 'town', faction: 'villager', icon: '👤', type: 'Passive', desc: 'No abilities. Vote to eliminate the Mafia.' },
+
+      { id: 'serialkiller', name: 'Serial Killer', cat: 'neutral', faction: 'neutral', icon: '🔪', type: 'Nightly', desc: 'Kill one player each night. Win if last standing.' },
+      { id: 'jester', name: 'Jester', cat: 'neutral', faction: 'neutral', icon: '🤡', type: 'Passive', desc: 'Trick the town into voting you out to win.' },
+      { id: 'executioner', name: 'Executioner', cat: 'neutral', faction: 'neutral', icon: '🪓', type: 'Nightly', desc: '(Night 1) Choose target. Win if they get voted out.' },
+      { id: 'lover', name: 'Lover', cat: 'neutral', faction: 'neutral', icon: '❤️', type: 'Nightly', desc: '(Night 1 Only) Wake up and identify your partner.' }
     ];
 
-    const ROOM_ROOT = 'qrRooms';
-    const CATS = [
-      { id: 'mafia', label: 'MAFIA', colorClass: 'mafia' },
-      { id: 'town', label: 'TOWN', colorClass: 'villager' },
-      { id: 'neutral', label: 'NEUTRAL', colorClass: 'neutral' }
-    ];
-
+    let activeTab = 'mafia';
     let selectedRoles = {};
-    let activeRoom = '';
-    let activePlayerId = '';
-    let activePlayerName = '';
-    let activeHostKey = '';
-    let roomListenerRef = null;
-    let currentPlayerData = null;
-    let currentRoomData = null;
+    let currentRoomId = null;
+    let currentPlayerId = null;
+    let currentRole = null;
     let cardVisible = false;
 
-    window.addEventListener('load', () => {
-      renderRoleList();
-      randomizeRoles(false);
+    function $(id) { return document.getElementById(id); }
 
-      const params = new URLSearchParams(location.search);
-      const roomFromUrl = cleanCode(params.get('room') || '');
-      if (roomFromUrl) {
-        document.getElementById('joinCode').value = roomFromUrl;
-        const storedPid = localStorage.getItem(playerKey(roomFromUrl));
-        if (storedPid) {
-          activeRoom = roomFromUrl;
-          activePlayerId = storedPid;
-          activePlayerName = localStorage.getItem(playerNameKey(roomFromUrl)) || '';
-          listenAsPlayer(roomFromUrl, storedPid);
-          go('player');
-        } else {
-          go('join');
-        }
-        return;
-      }
-
-      const hostRoom = localStorage.getItem('mafia_qr_host_room');
-      const hostKey = localStorage.getItem('mafia_qr_host_key');
-      if (hostRoom && hostKey) {
-        db.ref(`${ROOM_ROOT}/${hostRoom}`).once('value').then(snap => {
-          const room = snap.val();
-          if (room && room.hostKey === hostKey) {
-            activeRoom = hostRoom;
-            activeHostKey = hostKey;
-            listenAsHost(hostRoom);
-            go('host');
-          }
-        });
-      }
-    });
-
-    document.getElementById('playerCount').addEventListener('input', () => updateCounts());
-
-    function go(id) {
+    function showScreen(id) {
       document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-      document.getElementById(id).classList.add('active');
+      $(id).classList.add('active');
     }
 
-    function goCreate() { go('create'); updateCounts(); }
-    function goJoin() { go('join'); }
-
-    function toast(msg) {
-      const el = document.getElementById('toast');
-      el.textContent = msg;
-      el.classList.add('show');
-      setTimeout(() => el.classList.remove('show'), 2300);
+    function getRole(id) {
+      return ROLES_DEF.find(r => r.id === id) || null;
     }
 
-    function cleanCode(value) { return String(value || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10); }
-    function cleanName(value) { return String(value || '').trim().replace(/[.#$/[\]]/g, '').slice(0, 24); }
-    function randomId(len = 6) {
-      const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    function factionColor(role) {
+      if (!role) return '#fff';
+      if (role.faction === 'mafia') return 'var(--red)';
+      if (role.faction === 'villager') return 'var(--green)';
+      return 'var(--gold)';
+    }
+
+    function randomId(length = 10) {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
       let out = '';
-      crypto.getRandomValues(new Uint32Array(len)).forEach(n => out += alphabet[n % alphabet.length]);
+      crypto.getRandomValues(new Uint32Array(length)).forEach(n => out += chars[n % chars.length]);
       return out;
     }
-    function playerKey(room) { return `mafia_qr_player_${room}`; }
-    function playerNameKey(room) { return `mafia_qr_player_name_${room}`; }
-    function getRole(id) { return ROLES_DEF.find(r => r.id === id); }
-    function publicRoles() { return ROLES_DEF.filter(r => !r.isMeta); }
 
-    function renderRoleList() {
-      const list = document.getElementById('roleList');
-      list.innerHTML = '';
-      CATS.forEach(cat => {
-        const header = document.createElement('div');
-        header.className = `role-header ${cat.colorClass}`;
-        header.textContent = cat.label;
-        list.appendChild(header);
+    function setTab(tab) {
+      activeTab = tab;
+      document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+      $('tab-' + tab).classList.add('active');
+      renderRoles();
+    }
 
-        publicRoles().filter(r => r.cat === cat.id).forEach(role => {
-          const count = selectedRoles[role.id] || 0;
-          const div = document.createElement('div');
-          div.className = 'role-row';
-          div.innerHTML = `
-            <div class="role-main" onclick="roleInfo('${role.id}')">
-              <div class="role-name ${cat.colorClass}">${role.icon} ${role.name}</div>
-              <div class="role-desc-mini">${role.desc}</div>
+    function updateRole(id, change) {
+      selectedRoles[id] = Math.max(0, (selectedRoles[id] || 0) + change);
+      if (selectedRoles[id] === 0) delete selectedRoles[id];
+      renderRoles();
+    }
+
+    function getSelectedTotal() {
+      return Object.values(selectedRoles).reduce((sum, count) => sum + count, 0);
+    }
+
+    function renderRoles() {
+      const list = $('roleList');
+      const roles = ROLES_DEF.filter(r => r.cat === activeTab);
+      list.innerHTML = roles.map(role => {
+        const count = selectedRoles[role.id] || 0;
+        return `
+          <div class="role-row">
+            <div>
+              <div class="role-name" style="color:${factionColor(role)}">${role.icon} ${role.name}</div>
+              <div class="role-desc">${role.desc}</div>
             </div>
-            <div class="counter">
-              <button class="count-btn" onclick="changeRole('${role.id}', -1)">−</button>
-              <span id="count-${role.id}" class="count-num">${count}</span>
-              <button class="count-btn" onclick="changeRole('${role.id}', 1)">+</button>
-            </div>`;
-          list.appendChild(div);
-        });
-      });
+            <div class="role-controls">
+              <button class="mini-btn" onclick="updateRole('${role.id}', -1)">−</button>
+              <div class="count-pill">${count}</div>
+              <button class="mini-btn" onclick="updateRole('${role.id}', 1)">+</button>
+            </div>
+          </div>
+        `;
+      }).join('');
       updateCounts();
     }
-
-    function changeRole(id, delta) {
-      selectedRoles[id] = Math.max(0, (selectedRoles[id] || 0) + delta);
-      const el = document.getElementById(`count-${id}`);
-      if (el) el.textContent = selectedRoles[id];
-      updateCounts();
-    }
-
-    function resetRoles() {
-      selectedRoles = {};
-      renderRoleList();
-    }
-
-    function totalSelectedRoles() { return Object.values(selectedRoles).reduce((a, b) => a + Number(b || 0), 0); }
 
     function updateCounts() {
-      const want = Number(document.getElementById('playerCount').value || 0);
-      const selected = totalSelectedRoles();
-      document.getElementById('selectedCount').textContent = `${selected} role${selected === 1 ? '' : 's'} selected`;
-      const status = document.getElementById('matchStatus');
-      if (selected === want) {
-        status.textContent = 'Ready';
-        status.style.color = 'var(--green)';
+      const needed = Number($('playerCount').value || 0);
+      const selected = getSelectedTotal();
+      $('neededCount').innerText = needed;
+      $('selectedCount').innerText = selected;
+
+      const msg = $('balanceMessage');
+      if (selected === needed && needed >= 3) {
+        msg.innerText = 'Ready. Create the QR game.';
+        msg.className = 'small good';
+      } else if (selected < needed) {
+        msg.innerText = `Add ${needed - selected} more role(s).`;
+        msg.className = 'small warn';
       } else {
-        status.textContent = selected < want ? `Needs ${want - selected}` : `Remove ${selected - want}`;
-        status.style.color = 'var(--gold)';
+        msg.innerText = `Remove ${selected - needed} role(s).`;
+        msg.className = 'small bad';
       }
     }
 
-    function randomizeRoles(showToast = true) {
-      const n = Math.max(3, Number(document.getElementById('playerCount').value || 8));
-      selectedRoles = {};
+    $('playerCount').addEventListener('input', updateCounts);
 
-      let mafiaCount = Math.max(1, Math.floor(n / 4));
-      let neutralCount = n >= 9 ? 1 : 0;
-      let townCount = n - mafiaCount - neutralCount;
-
-      if (mafiaCount >= 2) {
-        selectedRoles.godfather = 1;
-        selectedRoles.mafia = mafiaCount - 1;
-      } else {
-        selectedRoles.mafia = 1;
-      }
-
-      const townPower = [];
-      if (n >= 4) townPower.push('doctor');
-      if (n >= 5) townPower.push('detective');
-      if (n >= 7) townPower.push('bodyguard');
-      if (n >= 10) townPower.push('sheriff');
-      townPower.slice(0, Math.max(0, townCount - 1)).forEach(id => selectedRoles[id] = (selectedRoles[id] || 0) + 1);
-      const usedTown = Object.entries(selectedRoles).filter(([id]) => getRole(id)?.cat === 'town').reduce((a, [,v]) => a + v, 0);
-      selectedRoles.villager = Math.max(0, townCount - usedTown);
-
-      if (neutralCount) selectedRoles.jester = 1;
-
-      renderRoleList();
-      if (showToast) toast('Quick role setup created');
-    }
-
-    function buildDeck(selected) {
+    function buildDeck() {
       const deck = [];
-      Object.entries(selected || {}).forEach(([id, count]) => {
-        for (let i = 0; i < Number(count || 0); i++) deck.push(id);
+      Object.keys(selectedRoles).forEach(roleId => {
+        for (let i = 0; i < selectedRoles[roleId]; i++) deck.push(roleId);
       });
+      for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+      }
       return deck;
     }
 
-    function shuffle(arr) {
-      const a = [...arr];
-      for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [a[i], a[j]] = [a[j], a[i]];
-      }
-      return a;
-    }
-
-    async function createRoom() {
-      const maxPlayers = Number(document.getElementById('playerCount').value || 0);
-      const selected = totalSelectedRoles();
-      if (maxPlayers < 3) return toast('Use at least 3 players');
-      if (selected !== maxPlayers) return toast('Selected roles must equal player count');
-
-      let code = randomId(5);
-      let snap = await db.ref(`${ROOM_ROOT}/${code}`).once('value');
-      while (snap.exists()) {
-        code = randomId(5);
-        snap = await db.ref(`${ROOM_ROOT}/${code}`).once('value');
-      }
-
-      const hostKey = randomId(18);
-      await db.ref(`${ROOM_ROOT}/${code}`).set({
-        code,
-        hostKey,
-        status: 'lobby',
-        maxPlayers,
-        selectedRoles,
-        createdAt: firebase.database.ServerValue.TIMESTAMP,
-        players: {}
+    function createSlots(deck) {
+      const slots = {};
+      deck.forEach((roleId, index) => {
+        slots['s' + index] = {
+          index,
+          roleId,
+          claimed: false,
+          playerId: '',
+          playerName: ''
+        };
       });
-
-      localStorage.setItem('mafia_qr_host_room', code);
-      localStorage.setItem('mafia_qr_host_key', hostKey);
-      activeRoom = code;
-      activeHostKey = hostKey;
-      listenAsHost(code);
-      go('host');
+      return slots;
     }
 
-    function inviteUrl(room) {
-      const base = `${location.origin}${location.pathname}`;
-      return `${base}?room=${encodeURIComponent(room)}`;
+    function createGame() {
+      const maxPlayers = Number($('playerCount').value || 0);
+      const selected = getSelectedTotal();
+      if (maxPlayers < 3) return alert('Use at least 3 players.');
+      if (selected !== maxPlayers) return alert('Role count must match player count.');
+
+      const roomId = randomId(10);
+      const deck = buildDeck();
+      const room = {
+        createdAt: Date.now(),
+        maxPlayers,
+        slots: createSlots(deck)
+      };
+
+      db.ref(`${DB_ROOT}/${roomId}`).set(room)
+        .then(() => openHostRoom(roomId))
+        .catch(err => alert('Firebase blocked Create Game. Add the rules I gave you, then try again.\n\n' + err.message));
     }
 
-    function renderQr(room) {
-      const url = inviteUrl(room);
-      document.getElementById('hostCode').textContent = room;
-      document.getElementById('inviteLink').textContent = url;
-      const canvas = document.getElementById('qrCanvas');
-      if (window.QRCode && QRCode.toCanvas) {
-        QRCode.toCanvas(canvas, url, { width: 220, margin: 1, errorCorrectionLevel: 'M' }, err => {
-          if (err) toast('QR failed, use room code');
+    function openHostRoom(roomId) {
+      currentRoomId = roomId;
+      localStorage.setItem('mafia_qr_host_room', roomId);
+      const joinUrl = `${location.origin}${location.pathname}?room=${encodeURIComponent(roomId)}`;
+      $('joinUrlText').innerText = joinUrl;
+      $('qrBox').innerHTML = '';
+      new QRCode($('qrBox'), {
+        text: joinUrl,
+        width: 240,
+        height: 240,
+        correctLevel: QRCode.CorrectLevel.M
+      });
+      showScreen('screen-host-room');
+      listenHost(roomId);
+    }
+
+    function listenHost(roomId) {
+      db.ref(`${DB_ROOT}/${roomId}`).on('value', snap => {
+        const room = snap.val();
+        if (!room || !room.slots) return;
+        const slots = Object.values(room.slots).sort((a, b) => a.index - b.index);
+        const claimed = slots.filter(s => s.claimed);
+        $('claimedCount').innerText = `${claimed.length} / ${room.maxPlayers}`;
+
+        const list = $('hostPlayerList');
+        if (claimed.length === 0) {
+          list.innerHTML = '<p class="small">No players joined yet.</p>';
+          return;
+        }
+        list.innerHTML = claimed.map((slot, i) => `
+          <div class="player-item">
+            <span><span class="dot"></span>${slot.playerName || ('Player ' + (i + 1))}</span>
+            <span class="small">Joined</span>
+          </div>
+        `).join('');
+      });
+    }
+
+    function newGame() {
+      currentRoomId = null;
+      localStorage.removeItem('mafia_qr_host_room');
+      location.href = location.origin + location.pathname;
+    }
+
+    function getRoomFromUrl() {
+      return new URLSearchParams(location.search).get('room');
+    }
+
+    function beginPlayerJoin(roomId) {
+      currentRoomId = roomId;
+      currentPlayerId = localStorage.getItem(`mafia_qr_player_${roomId}`);
+
+      if (currentPlayerId) {
+        db.ref(`${DB_ROOT}/${roomId}/slots`).once('value', snap => {
+          const slots = snap.val() || {};
+          const mySlot = Object.values(slots).find(s => s.playerId === currentPlayerId);
+          if (mySlot) return showPlayerRole(mySlot.roleId);
+          localStorage.removeItem(`mafia_qr_player_${roomId}`);
+          currentPlayerId = null;
+          showScreen('screen-player-join');
         });
       } else {
-        const ctx = canvas.getContext('2d');
-        canvas.width = canvas.height = 220;
-        ctx.fillStyle = '#fff'; ctx.fillRect(0,0,220,220);
-        ctx.fillStyle = '#000'; ctx.font = '14px Arial'; ctx.fillText('QR library failed', 48, 108);
+        showScreen('screen-player-join');
       }
     }
 
-    function listenAsHost(room) {
-      detachListener();
-      renderQr(room);
-      roomListenerRef = db.ref(`${ROOM_ROOT}/${room}`);
-      roomListenerRef.on('value', snap => {
-        const data = snap.val();
-        if (!data) {
-          toast('Room closed');
-          localStorage.removeItem('mafia_qr_host_room');
-          localStorage.removeItem('mafia_qr_host_key');
-          go('home');
+    function claimRole() {
+      const name = $('playerName').value.trim();
+      if (!name) return alert('Enter your name first.');
+      if (!currentRoomId) return alert('Missing QR room. Scan again.');
+
+      currentPlayerId = localStorage.getItem(`mafia_qr_player_${currentRoomId}`) || randomId(18);
+      let assignedSlotKey = null;
+      let assignedRoleId = null;
+
+      $('joinMessage').innerText = 'Claiming role...';
+
+      db.ref(`${DB_ROOT}/${currentRoomId}/slots`).transaction(slots => {
+        if (!slots) return slots;
+
+        const already = Object.entries(slots).find(([key, slot]) => slot.playerId === currentPlayerId);
+        if (already) {
+          assignedSlotKey = already[0];
+          assignedRoleId = already[1].roleId;
+          return slots;
+        }
+
+        const open = Object.entries(slots)
+          .sort((a, b) => (a[1].index || 0) - (b[1].index || 0))
+          .find(([key, slot]) => !slot.claimed);
+
+        if (!open) return;
+
+        assignedSlotKey = open[0];
+        assignedRoleId = open[1].roleId;
+        slots[assignedSlotKey].claimed = true;
+        slots[assignedSlotKey].playerId = currentPlayerId;
+        slots[assignedSlotKey].playerName = name;
+        slots[assignedSlotKey].claimedAt = Date.now();
+        return slots;
+      }, (error, committed) => {
+        if (error) {
+          $('joinMessage').innerText = error.message;
           return;
         }
-        currentRoomData = data;
-        updateHost(data);
+        if (!committed || !assignedRoleId) {
+          $('joinMessage').innerText = 'All roles are already claimed.';
+          return;
+        }
+
+        localStorage.setItem(`mafia_qr_player_${currentRoomId}`, currentPlayerId);
+        showPlayerRole(assignedRoleId);
       });
     }
 
-    function updateHost(room) {
-      document.getElementById('hostCode').textContent = room.code || activeRoom;
-      const players = room.players || {};
-      const ids = Object.keys(players).sort((a,b) => (players[a].joinedAt || 0) - (players[b].joinedAt || 0));
-      document.getElementById('hostCount').textContent = `${ids.length} / ${room.maxPlayers}`;
-      document.getElementById('hostStatus').textContent = room.status === 'assigned' ? 'Roles assigned' : 'Waiting for players';
-
-      const list = document.getElementById('hostPlayers');
-      list.innerHTML = '';
-      ids.forEach((id, idx) => {
-        const p = players[id];
-        const hasRole = !!p.roleId;
-        const div = document.createElement('div');
-        div.className = 'player-item';
-        div.innerHTML = `
-          <div>
-            <div class="player-name">${idx + 1}. ${escapeHtml(p.name || 'Player')}</div>
-            <div class="player-meta">${hasRole ? 'Role received' : 'No role yet'}</div>
-          </div>
-          ${room.status === 'lobby' ? `<button class="small danger" onclick="removePlayer('${id}')">Remove</button>` : `<span class="pill">${hasRole ? 'Assigned' : 'Waiting'}</span>`}
-        `;
-        list.appendChild(div);
-      });
-
-      const assignBtn = document.getElementById('assignBtn');
-      assignBtn.disabled = room.status === 'assigned' || ids.length !== Number(room.maxPlayers || 0);
-      assignBtn.textContent = room.status === 'assigned' ? 'Roles Assigned' : 'Assign Roles';
-    }
-
-    async function copyInvite() {
-      const url = inviteUrl(activeRoom);
-      try {
-        await navigator.clipboard.writeText(url);
-        toast('Join link copied');
-      } catch {
-        toast('Copy failed. Long press the link.');
-      }
-    }
-
-    async function removePlayer(id) {
-      if (!activeRoom || !id) return;
-      await db.ref(`${ROOM_ROOT}/${activeRoom}/players/${id}`).remove();
-      toast('Player removed');
-    }
-
-    async function assignRoles() {
-      const snap = await db.ref(`${ROOM_ROOT}/${activeRoom}`).once('value');
-      const room = snap.val();
-      if (!room) return toast('Room not found');
-      if (room.status === 'assigned') return toast('Already assigned');
-
-      const players = room.players || {};
-      const playerIds = Object.keys(players);
-      const deck = buildDeck(room.selectedRoles);
-      if (playerIds.length !== Number(room.maxPlayers)) return toast('Need all players before assigning');
-      if (deck.length !== playerIds.length) return toast('Role count does not match players');
-
-      const shuffledDeck = shuffle(deck);
-      const shuffledPlayers = shuffle(playerIds);
-      const updates = { status: 'assigned', assignedAt: firebase.database.ServerValue.TIMESTAMP };
-      shuffledPlayers.forEach((pid, idx) => { updates[`players/${pid}/roleId`] = shuffledDeck[idx]; });
-      await db.ref(`${ROOM_ROOT}/${activeRoom}`).update(updates);
-      toast('Roles assigned');
-    }
-
-    async function resetAssignments() {
-      const snap = await db.ref(`${ROOM_ROOT}/${activeRoom}/players`).once('value');
-      const players = snap.val() || {};
-      const updates = { status: 'lobby' };
-      Object.keys(players).forEach(pid => updates[`players/${pid}/roleId`] = null);
-      await db.ref(`${ROOM_ROOT}/${activeRoom}`).update(updates);
-      toast('Assignments reset');
-    }
-
-    async function closeRoom() {
-      if (!confirm('Close this room for everyone?')) return;
-      await db.ref(`${ROOM_ROOT}/${activeRoom}`).remove();
-      localStorage.removeItem('mafia_qr_host_room');
-      localStorage.removeItem('mafia_qr_host_key');
-      detachListener();
-      go('home');
-    }
-
-    async function joinRoom() {
-      const code = cleanCode(document.getElementById('joinCode').value);
-      const name = cleanName(document.getElementById('joinName').value);
-      if (!code || !name) return toast('Enter room code and name');
-
-      const roomRef = db.ref(`${ROOM_ROOT}/${code}`);
-      const snap = await roomRef.once('value');
-      const room = snap.val();
-      if (!room) return toast('Room not found');
-      if (room.status !== 'lobby') return toast('Game already started');
-
-      const existingPlayerId = localStorage.getItem(playerKey(code));
-      if (existingPlayerId && room.players && room.players[existingPlayerId]) {
-        activeRoom = code;
-        activePlayerId = existingPlayerId;
-        activePlayerName = localStorage.getItem(playerNameKey(code)) || name;
-        listenAsPlayer(code, existingPlayerId);
-        go('player');
-        return;
-      }
-
-      const players = room.players || {};
-      if (Object.keys(players).length >= Number(room.maxPlayers || 0)) return toast('Room is full');
-      const nameTaken = Object.values(players).some(p => String(p.name || '').toLowerCase() === name.toLowerCase());
-      if (nameTaken) return toast('Name already taken');
-
-      const newRef = db.ref(`${ROOM_ROOT}/${code}/players`).push();
-      await newRef.set({
-        name,
-        joinedAt: firebase.database.ServerValue.TIMESTAMP,
-        roleId: null
-      });
-
-      localStorage.setItem(playerKey(code), newRef.key);
-      localStorage.setItem(playerNameKey(code), name);
-      activeRoom = code;
-      activePlayerId = newRef.key;
-      activePlayerName = name;
+    function showPlayerRole(roleId) {
+      currentRole = getRole(roleId);
       cardVisible = false;
-      listenAsPlayer(code, newRef.key);
-      go('player');
-    }
+      if (!currentRole) return alert('Role not found.');
 
-    function listenAsPlayer(room, playerId) {
-      detachListener();
-      cardVisible = false;
-      activeRoom = room;
-      activePlayerId = playerId;
-      document.getElementById('playerRoomLabel').textContent = `Room ${room}`;
-      roomListenerRef = db.ref(`${ROOM_ROOT}/${room}`);
-      roomListenerRef.on('value', snap => {
-        const data = snap.val();
-        if (!data) {
-          localStorage.removeItem(playerKey(room));
-          toast('Room closed');
-          go('home');
-          return;
-        }
-        currentRoomData = data;
-        currentPlayerData = data.players ? data.players[playerId] : null;
-        if (!currentPlayerData) {
-          localStorage.removeItem(playerKey(room));
-          toast('You were removed from the room');
-          go('home');
-          return;
-        }
-        activePlayerName = currentPlayerData.name || activePlayerName;
-        updatePlayer();
-      });
-    }
-
-    function updatePlayer() {
-      const status = document.getElementById('playerStatus');
-      const revealBtn = document.getElementById('revealBtn');
-      if (!currentPlayerData?.roleId) {
-        status.textContent = 'Waiting';
-        revealBtn.disabled = true;
-        renderHiddenWaiting();
-        return;
-      }
-      status.textContent = cardVisible ? 'Visible' : 'Hidden';
-      revealBtn.disabled = false;
-      revealBtn.textContent = cardVisible ? 'Hide Card' : 'Reveal Card';
-      if (cardVisible) renderRoleCard(currentPlayerData.roleId);
-      else renderHiddenRole();
-    }
-
-    function renderHiddenWaiting() {
-      document.getElementById('cardFront').innerHTML = `
-        <div class="role-icon">⌛</div>
-        <div class="role-title">WAITING</div>
-        <span class="role-type">Host has not assigned roles</span>
-        <p class="role-desc">Keep this page open. Your card will stay hidden by default.</p>`;
-    }
-
-    function renderHiddenRole() {
-      document.getElementById('cardFront').innerHTML = `
-        <div class="role-icon">🂠</div>
-        <div class="role-title">CARD HIDDEN</div>
-        <span class="role-type">Safe Screen</span>
-        <p class="role-desc">Tap reveal only when nobody else can see your phone.</p>`;
-    }
-
-    function renderRoleCard(roleId) {
-      const role = getRole(roleId) || { name: 'Unknown', faction: 'neutral', icon: '?', type: 'Unknown', desc: 'Role not found.' };
-      const colorClass = role.faction === 'mafia' ? 'mafia' : (role.faction === 'villager' ? 'villager' : 'neutral');
-      const ammo = [];
-      if (role.ammo) ammo.push(`Uses: ${role.ammo}`);
-      if (role.ammo2) ammo.push(`Second Uses: ${role.ammo2}`);
-      document.getElementById('cardFront').innerHTML = `
-        <div class="role-icon">${role.icon}</div>
-        <div class="role-title ${colorClass}">${role.name}</div>
-        <span class="role-type">${role.type} • ${role.faction}</span>
-        <p class="role-desc">${role.desc}</p>
-        ${ammo.length ? `<div class="ammo">${ammo.join(' • ')}</div>` : ''}`;
+      $('roleIcon').innerText = currentRole.icon;
+      $('roleName').innerText = currentRole.name;
+      $('roleName').style.color = factionColor(currentRole);
+      $('roleFaction').innerText = currentRole.faction === 'villager' ? 'Town' : currentRole.faction;
+      $('roleFaction').style.color = factionColor(currentRole);
+      $('roleDesc').innerText = currentRole.desc;
+      showScreen('screen-player-card');
+      renderCardVisibility();
     }
 
     function toggleCard() {
-      if (!currentPlayerData?.roleId) return;
       cardVisible = !cardVisible;
-      updatePlayer();
+      renderCardVisibility();
     }
 
-    function leavePlayerView() {
-      go('home');
+    function renderCardVisibility() {
+      $('cardBack').classList.toggle('hidden', cardVisible);
+      $('cardFront').classList.toggle('hidden', !cardVisible);
+      $('revealBtn').innerText = cardVisible ? 'Hide Card' : 'Reveal Card';
     }
 
-    function detachListener() {
-      if (roomListenerRef) { roomListenerRef.off(); roomListenerRef = null; }
+    function boot() {
+      renderRoles();
+      const roomId = getRoomFromUrl();
+      if (roomId) {
+        db.ref(`${DB_ROOT}/${roomId}`).once('value', snap => {
+          if (!snap.exists()) {
+            document.body.innerHTML = '<main id="app"><h1>MAFIA</h1><div class="card"><h2>Game not found</h2><p class="center-note">Ask the host to create a new QR.</p></div></main>';
+            return;
+          }
+          beginPlayerJoin(roomId);
+        });
+      }
     }
 
-    function roleInfo(roleId) {
-      const r = getRole(roleId);
-      if (!r) return;
-      showModal(r.name, `<div class="wiki-row"><div style="font-size:42px;">${r.icon}</div><div class="role-type">${r.type} • ${r.faction}</div><p>${r.desc}</p></div>`);
-    }
-
-    function showWiki() {
-      const content = publicRoles().map(r => {
-        const colorClass = r.faction === 'mafia' ? 'mafia' : (r.faction === 'villager' ? 'villager' : 'neutral');
-        return `<div class="wiki-row"><strong class="${colorClass}">${r.icon} ${r.name}</strong><div style="font-size:11px; color:#777; margin-top:4px;">${r.type} • ${r.faction}</div><p style="margin-bottom:0;">${r.desc}</p></div>`;
-      }).join('');
-      showModal('Role Wiki', content);
-    }
-
-    function showModal(title, html) {
-      document.getElementById('modalTitle').textContent = title;
-      document.getElementById('modalBody').innerHTML = html;
-      document.getElementById('modal').classList.add('active');
-    }
-    function hideModal() { document.getElementById('modal').classList.remove('active'); }
-    function closeModal(event) { if (event.target.id === 'modal') hideModal(); }
-
-    function escapeHtml(str) {
-      return String(str).replace(/[&<>"']/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;' }[m]));
-    }
+    boot();
   </script>
 </body>
 </html>
