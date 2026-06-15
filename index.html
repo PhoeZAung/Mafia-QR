@@ -113,6 +113,32 @@
 
     button:active { transform: scale(.985); }
 
+    button:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .status-badge {
+      display: inline-block;
+      border: 1px solid #3a3a3a;
+      background: #0c0c0c;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+
+    .role-chip {
+      font-size: 12px;
+      font-weight: 800;
+      text-align: right;
+      max-width: 190px;
+    }
+
     button.secondary {
       background: #191919;
       border: 1px solid var(--border);
@@ -318,7 +344,15 @@
     <h1>MAFIA</h1>
     <p class="subtitle">QR Role Dealer</p>
 
-    <section id="screen-host-setup" class="screen active">
+    <section id="screen-home" class="screen active">
+      <div class="card">
+        <h2 style="text-align:center; margin-bottom: 8px;">Create a Game</h2>
+        <p class="center-note">Start a simple QR Mafia room. After this, pick the player count and roles.</p>
+        <button onclick="showScreen('screen-host-setup')">Create Game</button>
+      </div>
+    </section>
+
+    <section id="screen-host-setup" class="screen">
       <div class="card">
         <label for="playerCount">Amount of players</label>
         <input id="playerCount" type="number" min="3" value="8" />
@@ -341,7 +375,7 @@
         </div>
         <p id="balanceMessage" class="small warn">Select the same number of roles as players.</p>
 
-        <button onclick="createGame()">Create Game QR</button>
+        <button onclick="createGame()">Create QR Room</button>
       </div>
     </section>
 
@@ -355,6 +389,7 @@
 
       <div class="card">
         <h3>Joined Players</h3>
+        <div id="hostRoomStatus" class="status-badge">Waiting for players</div>
         <div class="stat-line">
           <span>Claimed roles</span>
           <strong id="claimedCount">0 / 0</strong>
@@ -362,6 +397,7 @@
         <div id="hostPlayerList" class="player-list"></div>
       </div>
 
+      <button id="startGameBtn" onclick="startGame()" disabled>Start Game</button>
       <button class="secondary" onclick="newGame()">Create Another Game</button>
     </section>
 
@@ -373,6 +409,14 @@
         <input id="playerName" type="text" autocomplete="off" placeholder="Example: Alex" />
         <button onclick="claimRole()">Join and Claim Role</button>
         <p id="joinMessage" class="small"></p>
+      </div>
+    </section>
+
+    <section id="screen-player-waiting" class="screen">
+      <div class="card">
+        <h2>You Joined</h2>
+        <p class="center-note">Your role is locked in. Wait for the host to press Start Game.</p>
+        <p class="small" style="text-align:center;">Keep this page open.</p>
       </div>
     </section>
 
@@ -568,6 +612,7 @@
       const deck = buildDeck();
       const room = {
         createdAt: Date.now(),
+        status: 'waiting',
         maxPlayers,
         slots: createSlots(deck)
       };
@@ -597,21 +642,56 @@
       db.ref(`${DB_ROOT}/${roomId}`).on('value', snap => {
         const room = snap.val();
         if (!room || !room.slots) return;
+
         const slots = Object.values(room.slots).sort((a, b) => a.index - b.index);
         const claimed = slots.filter(s => s.claimed);
+        const status = room.status || 'waiting';
+        const isFull = claimed.length === room.maxPlayers;
+
         $('claimedCount').innerText = `${claimed.length} / ${room.maxPlayers}`;
+
+        const statusText = status === 'started'
+          ? 'Game started — host can see all roles'
+          : (isFull ? 'Everyone joined — press Start Game' : 'Waiting for players');
+        $('hostRoomStatus').innerText = statusText;
+
+        const startBtn = $('startGameBtn');
+        startBtn.disabled = !(isFull && status !== 'started');
+        startBtn.innerText = status === 'started' ? 'Game Started' : 'Start Game';
 
         const list = $('hostPlayerList');
         if (claimed.length === 0) {
           list.innerHTML = '<p class="small">No players joined yet.</p>';
           return;
         }
-        list.innerHTML = claimed.map((slot, i) => `
-          <div class="player-item">
-            <span><span class="dot"></span>${slot.playerName || ('Player ' + (i + 1))}</span>
-            <span class="small">Joined</span>
-          </div>
-        `).join('');
+
+        list.innerHTML = claimed.map((slot, i) => {
+          const role = getRole(slot.roleId);
+          const roleName = role ? `${role.icon} ${role.name}` : 'Unknown Role';
+          return `
+            <div class="player-item">
+              <span><span class="dot"></span>${slot.playerName || ('Player ' + (i + 1))}</span>
+              <span class="role-chip" style="color:${factionColor(role)}">${roleName}</span>
+            </div>
+          `;
+        }).join('');
+      });
+    }
+
+    function startGame() {
+      if (!currentRoomId) return alert('Missing room.');
+      db.ref(`${DB_ROOT}/${currentRoomId}`).once('value', snap => {
+        const room = snap.val();
+        if (!room || !room.slots) return alert('Room not found.');
+        const slots = Object.values(room.slots);
+        const claimed = slots.filter(s => s.claimed).length;
+        if (claimed < room.maxPlayers) {
+          return alert(`Wait for everyone to join first. ${claimed} / ${room.maxPlayers} joined.`);
+        }
+        db.ref(`${DB_ROOT}/${currentRoomId}`).update({
+          status: 'started',
+          startedAt: Date.now()
+        });
       });
     }
 
@@ -633,7 +713,7 @@
         db.ref(`${DB_ROOT}/${roomId}/slots`).once('value', snap => {
           const slots = snap.val() || {};
           const mySlot = Object.values(slots).find(s => s.playerId === currentPlayerId);
-          if (mySlot) return showPlayerRole(mySlot.roleId);
+          if (mySlot) return watchPlayerStart(mySlot.roleId);
           localStorage.removeItem(`mafia_qr_player_${roomId}`);
           currentPlayerId = null;
           showScreen('screen-player-join');
@@ -688,7 +768,23 @@
         }
 
         localStorage.setItem(`mafia_qr_player_${currentRoomId}`, currentPlayerId);
-        showPlayerRole(assignedRoleId);
+        watchPlayerStart(assignedRoleId);
+      });
+    }
+
+    function watchPlayerStart(roleId) {
+      currentRole = getRole(roleId);
+      cardVisible = false;
+      if (!currentRole) return alert('Role not found.');
+
+      db.ref(`${DB_ROOT}/${currentRoomId}/status`).off();
+      db.ref(`${DB_ROOT}/${currentRoomId}/status`).on('value', snap => {
+        const status = snap.val() || 'waiting';
+        if (status === 'started') {
+          showPlayerRole(roleId);
+        } else {
+          showScreen('screen-player-waiting');
+        }
       });
     }
 
@@ -721,6 +817,7 @@
     function boot() {
       renderRoles();
       const roomId = getRoomFromUrl();
+
       if (roomId) {
         db.ref(`${DB_ROOT}/${roomId}`).once('value', snap => {
           if (!snap.exists()) {
@@ -728,6 +825,15 @@
             return;
           }
           beginPlayerJoin(roomId);
+        });
+        return;
+      }
+
+      const storedHostRoom = localStorage.getItem('mafia_qr_host_room');
+      if (storedHostRoom) {
+        db.ref(`${DB_ROOT}/${storedHostRoom}`).once('value', snap => {
+          if (snap.exists()) openHostRoom(storedHostRoom);
+          else localStorage.removeItem('mafia_qr_host_room');
         });
       }
     }
